@@ -1,30 +1,72 @@
 import { useEffect, useState } from "react";
+import { useMovieContext } from "../contexts/MovieContext";
 
 function MovieCard({ movie }) {
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Check if movie is already saved
+  const {
+    addToWatchlist,
+    removeFromWatchlist,
+    isInWatchlist,
+  } = useMovieContext();
+
+  const inWatchlist = isInWatchlist(movie.id);
+
+  // ✅ Check if movie is in Favorites (localStorage)
   useEffect(() => {
-    const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-    const exists = favorites.some((fav) => fav.id === movie.id);
+    const favorites =
+      JSON.parse(localStorage.getItem("favorites")) || [];
+
+    const exists = favorites.some(
+      (fav) => fav.id === movie.id
+    );
+
     setIsFavorite(exists);
   }, [movie.id]);
 
+  // ✅ Toggle Favorites
   const toggleFavorite = () => {
-    const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+    const favorites =
+      JSON.parse(localStorage.getItem("favorites")) || [];
 
     let updatedFavorites;
 
     if (isFavorite) {
-      // Remove from favorites
-      updatedFavorites = favorites.filter((fav) => fav.id !== movie.id);
+      updatedFavorites = favorites.filter(
+        (fav) => fav.id !== movie.id
+      );
     } else {
-      // Add to favorites
-      updatedFavorites = [...favorites, movie];
+      updatedFavorites = [
+        ...favorites,
+        {
+          id: movie.id,
+          title: movie.title,
+          poster_path: movie.poster_path,
+          release_date: movie.release_date,
+        },
+      ];
     }
 
-    localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+    localStorage.setItem(
+      "favorites",
+      JSON.stringify(updatedFavorites)
+    );
+
     setIsFavorite(!isFavorite);
+  };
+
+  // ✅ Toggle Watchlist (Context)
+  const handleWatchlist = () => {
+    if (inWatchlist) {
+      removeFromWatchlist(movie.id);
+    } else {
+      addToWatchlist({
+        id: movie.id,
+        title: movie.title,
+        poster_path: movie.poster_path,
+        release_date: movie.release_date,
+      });
+    }
   };
 
   return (
@@ -40,9 +82,25 @@ function MovieCard({ movie }) {
 
       <h3>{movie.title}</h3>
 
-      <button onClick={toggleFavorite}>
-        {isFavorite ? "Remove from Favorites ❤️" : "Add to Favorites 🤍"}
-      </button>
+      {movie.release_date && (
+        <p>{movie.release_date}</p>
+      )}
+
+      <div className="button-group">
+        {/* Favorites Button */}
+        <button onClick={toggleFavorite}>
+          {isFavorite
+            ? "Remove from Favorites ❤️"
+            : "Add to Favorites 🤍"}
+        </button>
+
+        {/* Watchlist Button */}
+        <button onClick={handleWatchlist}>
+          {inWatchlist
+            ? "Remove from Watchlist 🎬"
+            : "Add to Watchlist ➕"}
+        </button>
+      </div>
     </div>
   );
 }
